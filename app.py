@@ -71,7 +71,7 @@ def handle_threat():
             threat_ids[emergency_contact] = time.time()
             # Build email message
             subject = "Accident Alert!"
-            body = f"An accident may have occurred involving {user_data['name']}.\n\nPlease see their provided information for further details: {user_data}"
+            body = generate_email_body(user_data=user_data, emergency_contact=emergency_contact)
 
             # Send the email
             recipients = [emergency_contact]
