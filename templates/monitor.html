@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring Page</title>
+</head>
+<body>
+    <h1>Monitoring Page</h1>
+    <p>Hello, {{ user_data.name }}!</p>
+    <p>You are being monitored for any potential accidents.</p>
+    <p>If an accident is detected, your emergency contacts will be notified.</p>
+    <p id="audio_status">Audio status: Waiting for permission... </p>
+    <p id="gps_status">GPS status: Waiting for permission... </p>
+    <button onclick="startMonitoring()">Start Monitoring</button>
+    <button onclick="stopMonitoring()">Stop Monitoring</button>
+
+    <script>
+        let audioStream;
+        let audioContext;
+        let mic;
+        let threshold = 50;
+        let lastThreatDetectedTime = 0;
+        const threatCooldown = 120 * 1000; // 2 minutes cooldown in milliseconds
+
+        function startMonitoring() {
+            navigator.permissions.query({ name: 'microphone' }).then(permissionStatus => {
+                if (permissionStatus.state === 'granted') {
+                    navigator.mediaDevices.getUserMedia({ audio: true })
+                        .then(stream => {
+                            audioStream = stream;
+                            audioContext = new AudioContext();
+                            mic = audioContext.createMediaStreamSource(audioStream);
+                            monitorAudio();
+                        })
+                        .catch(err => {
+                            console.error('Error accessing microphone:', err);
+                            document.getElementById('audio_status').innerText = 'Audio status: Permission denied';
+                        });
+                } else {
+                    console.error('Microphone permission not granted');
+                    document.getElementById('audio_status').innerText = 'Audio status: Permission denied';
+                }
+            });
+
+            if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    console.log('Latitude:', position.coords.latitude);
+                    console.log('Longitude:', position.coords.longitude);
+                    document.getElementById('gps_status').innerText = `GPS status: Latitude ${position.coords.latitude}, Longitude ${position.coords.longitude}`;
+                }, error => {
+                    console.error('Error getting GPS coordinates:', error);
+                    document.getElementById('gps_status').innerText = 'GPS status: Permission denied';
+                });
+            } else {
+                console.error('Geolocation is not supported');
+                document.getElementById('gps_status').innerText = 'GPS status: Not supported';
+            }
+        }
+
+        function stopMonitoring() {
+            if (audioStream) {
+                audioStream.getTracks().forEach(track => track.stop());
+                document.getElementById('audio_status').innerText = 'Audio status: Stopped monitoring';
+            }
+        }
+
+        function monitorAudio() {
+            const analyser = audioContext.createAnalyser();
+            mic.connect(analyser);
+            analyser.fftSize = 256;
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function checkAudioLevel() {
+                requestAnimationFrame(checkAudioLevel);
+                analyser.getByteFrequencyData(dataArray);
+                const average = getAverageVolume(dataArray);
+
+                if (average > threshold && (Date.now() - lastThreatDetectedTime > threatCooldown)) {
+                    console.log('Dangerous audio level detected!');
+                    sendThreatAlert();
+                    lastThreatDetectedTime = Date.now();
+                    // Here you can trigger a threat alert and notify emergency contacts
+                }
+            }
+
+            checkAudioLevel();
+        }
+
+        function getAverageVolume(array) {
+            let sum = 0;
+            for (let i = 0; i < array.length; i++) {
+                sum += array[i];
+            }
+            return sum / array.length;
+        }
+
+        function sendThreatAlert() {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/threat", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+
+            const data = {
+                threatDetected: true,
+                message: "Dangerous audio level detected!"
+            };
+
+            xhr.send(JSON.stringify(data));
+        }
+    </script>
+</body>
+</html>
