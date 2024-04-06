@@ -21,7 +21,7 @@
         let mic;
         let threshold = 50;
         let lastThreatDetectedTime = 0;
-        const threatCooldown = 120 * 1000; // 2 minutes cooldown in milliseconds
+        const threatCooldown = 10 * 1000; // 2 minutes cooldown in milliseconds
 
         function startMonitoring() {
             navigator.permissions.query({ name: 'microphone' }).then(permissionStatus => {
