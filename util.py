@@ -8,7 +8,7 @@ def send_email_alert(recipients, subject, body):
     username = 'psg.freel@gmail.com'  
     password = 'rtra xhlx disw yube'
 
-    message = MIMEText(body)
+    message = MIMEText(body, 'html')
     message['Subject'] = subject
     message['From'] = username
     message['To'] = ', '.join(recipients) 
@@ -23,7 +23,7 @@ def send_email_alert(recipients, subject, body):
         print("Error sending email:", e)
 
 
-def generate_email_body(user_data, emergency_contact):
+def generate_email_body(user_data, audio_level=55):
     # Extract user information
     user_name = user_data.get('name', '')
     user_email = user_data.get('email', '')
@@ -37,31 +37,62 @@ def generate_email_body(user_data, emergency_contact):
     emg_email = user_data.get('emgEmail1', '')
     emg_phone = user_data.get('emgPhone1', '')
 
+    # Determine threat level and set background color
+    if audio_level < 60:
+        threat_message = "Minor threat detected."
+        background_color = "yellowgreen"
+    elif 60 <= audio_level < 75:
+        threat_message = "Medium threat detected."
+        background_color = "darkyellow"
+    elif audio_level >= 75:
+        threat_message = "Dangerous threat detected."
+        background_color = "red"
+
+    # Add threat message with background color to the email body
+    # th_message = f"<div style='background-color: {background_color}; padding: 10px;'><b><font size='5'>{threat_message}</font></b></div>"
+
     # Construct email body
-    email_body = f"""Subject: Accident Alert!
+    email_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Accident Alert!</title>
+        </head>
+        <body>
+            <h2>Accident Alert!</h2>
 
-        Dear Emergency Contact,
+            <p>Dear Emergency Contact,</p>
 
-        This is to notify you that an accident may have occurred involving {user_name}.
+            <p>This is to notify you that an accident may have occurred involving {user_name}.</p>
 
-        Details of the user:
-        - Name: {user_name}
-        - Email: {user_email}
-        - Phone: {user_phone}
-        - Address: {user_address}
-        - Blood Group: {user_blood_group}
-        - Treating Doctor: {user_treating_doctor}
+            <h3>Details of the user:</h3>
+            <ul>
+                <li>Name: {user_name}</li>
+                <li>Email: {user_email}</li>
+                <li>Phone: {user_phone}</li>
+                <li>Address: {user_address}</li>
+                <li>Blood Group: {user_blood_group}</li>
+                <li>Treating Doctor: {user_treating_doctor}</li>
+            </ul>
 
-        Emergency Contact Information:
-        - Name: {emg_name}
-        - Email: {emg_email}
-        - Phone: {emg_phone}
+            <h3>Emergency Contact Information:</h3>
+            <ul>
+                <li>Name: {emg_name}</li>
+                <li>Email: {emg_email}</li>
+                <li>Phone: {emg_phone}</li>
+            </ul>
 
-        Please take necessary actions as per the situation.
+            <div style='background-color: {background_color}; padding: 10px;'>
+                <h3 style='font-size: 18px; font-weight: bold;'>{threat_message}</h3>
+            </div>
 
-        Thank you.
+            <p>Please take necessary actions as per the situation.</p>
 
-        Sincerely,
-        [Your Organization's Name]"""
+            <p>Thank you.</p>
 
+            <p>Sincerely,<br>
+            Threat Detection Team</p>
+        </body>
+        </html>
+        """
     return email_body

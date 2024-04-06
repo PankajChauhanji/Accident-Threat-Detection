@@ -79,7 +79,7 @@
 
                 if (average > threshold && (Date.now() - lastThreatDetectedTime > threatCooldown)) {
                     console.log('Dangerous audio level detected!');
-                    sendThreatAlert();
+                    sendThreatAlert(average);
                     lastThreatDetectedTime = Date.now();
                     // Here you can trigger a threat alert and notify emergency contacts
                 }
@@ -96,14 +96,15 @@
             return sum / array.length;
         }
 
-        function sendThreatAlert() {
+        function sendThreatAlert(audio_level) {
             const xhr = new XMLHttpRequest();
             xhr.open("POST", "/threat", true);
             xhr.setRequestHeader("Content-Type", "application/json");
-
+            console.log(audio_level)
             const data = {
                 threatDetected: true,
-                message: "Dangerous audio level detected!"
+                message: "Dangerous audio level detected!",
+                audio_level : audio_level
             };
 
             xhr.send(JSON.stringify(data));

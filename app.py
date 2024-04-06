@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from util import *
 import time
+import json
 
 app = Flask(__name__)
 app.secret_key = 'some_secure_random_key'  # For sessions
@@ -56,6 +57,7 @@ def monitor_page():
 def handle_threat():
     print("Threat detected!")  
     user_data = session.get('user_data')
+    req_data = json.loads(request.data)
     if user_data:
         # Extract emergency contacts
         emergency_contact = user_data.get('emgEmail1', '')
@@ -71,7 +73,7 @@ def handle_threat():
             threat_ids[emergency_contact] = time.time()
             # Build email message
             subject = "Accident Alert!"
-            body = generate_email_body(user_data=user_data, emergency_contact=emergency_contact)
+            body = generate_email_body(user_data=user_data)
 
             # Send the email
             recipients = [emergency_contact]
